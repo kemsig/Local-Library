@@ -8,7 +8,7 @@ Local Library is a web-based application that allows users to browse and view PD
 - Search for PDFs by name
 - View PDFs in a full-screen viewer
 - Thumbnail previews for each PDF
-- User authentication (optional)
+- User authentication 
 
 ## Tech Stack
 ### Frontend:
