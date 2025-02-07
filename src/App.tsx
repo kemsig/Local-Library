@@ -3,6 +3,9 @@ import Cookies from "js-cookie";
 import LoginScreen from "./widgets/LoginWidget";
 import PDFLibrary from "./widgets/LibraryWidget";
 
+const flaskServer = import.meta.env.VITE_FLASK_SERVER_IP || 'http://localhost';
+const flaskPORT = import.meta.env.VITE_FLASK_PORT || 5000;
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
@@ -17,7 +20,7 @@ const App: React.FC = () => {
   // Handle login
   const handleLogin = async (username: string, password: string): Promise<void> => {
     try {
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch(`${flaskServer}:${flaskPORT}/login`, {
         method: "POST",
         credentials: "include", // Important for cookies
         headers: { "Content-Type": "application/json" },
@@ -37,7 +40,7 @@ const App: React.FC = () => {
   // Handle logout
   const handleLogout = async (): Promise<void> => {
     try {
-      await fetch("http://localhost:5000/logout", {
+      await fetch(`${flaskServer}:${flaskPORT}/logout`, {
         method: "POST",
         credentials: "include",
       });

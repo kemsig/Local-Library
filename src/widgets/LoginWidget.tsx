@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Book, Loader } from 'lucide-react';
 
+const flaskServer = import.meta.env.VITE_FLASK_SERVER_IP || 'http://localhost';
+const flaskPORT = import.meta.env.VITE_FLASK_PORT || 5000;
+
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => void;
 }
@@ -17,7 +20,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch(`${flaskServer}:${flaskPORT}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
