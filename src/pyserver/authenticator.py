@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
+from pdf2image import convert_from_path
+from PIL import Image
 import os
 from dotenv import load_dotenv
 from functools import wraps
@@ -12,7 +14,9 @@ load_dotenv(dotenv_path=env_path)
 PORT = os.getenv("FLASK_RUN_PORT", 5000)
 LOGIN_USERNAME=os.getenv("LOGIN_USERNAME", "admin")
 LOGIN_PASSWORD=os.getenv("LOGIN_PASSWORD", "admin")
+
 PDF_DIRECTORY=os.path.join(base_dir, "pdfs")
+THUMBNAIL_DIRECTORY=os.path.join(base_dir, "thumbnails")
 
 # Start App
 app = Flask(__name__)
@@ -38,6 +42,32 @@ def get_pdfs():
         # Get the list of PDF filenames in the directory
         pdf_files = [f for f in os.listdir(PDF_DIRECTORY) if f.endswith('.pdf')]
         return jsonify(pdf_files)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route to generate and serve the PDF thumbnail
+@app.route('/api/pdfs/thumbnails/<filename>', methods=['GET'])
+@requires_auth
+def get_pdf_thumbnail(filename):
+    try:
+        # Path to the PDF file
+        pdf_path = os.path.join(PDF_DIRECTORY, filename)
+        
+        if not os.path.exists(pdf_path):
+            return jsonify({"error": "PDF not found"}), 404
+        
+        # Check if the thumbnail already exists
+        thumbnail_path = os.path.join(THUMBNAIL_DIRECTORY, f"{filename}.png")
+        if not os.path.exists(thumbnail_path):
+            # Generate thumbnail
+            images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=72)  # Convert only the first page
+            thumbnail = images[0]
+            # Save the thumbnail as a PNG file
+            thumbnail.save(thumbnail_path, "PNG")
+        
+        # Serve the thumbnail
+        return send_from_directory(THUMBNAIL_DIRECTORY, f"{filename}.png")
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -5,6 +5,7 @@ const PDFLibrary = ({ onLogout }: { onLogout: () => void }) => {
   const [pdfs, setPdfs] = useState<string[]>([]);
   const [selectedPDF, setSelectedPDF] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [thumbnails, setThumbnails] = useState<{ [key: string]: string }>({});
 
   // Fetch the list of PDFs from the Flask API
   useEffect(() => {
@@ -20,6 +21,34 @@ const PDFLibrary = ({ onLogout }: { onLogout: () => void }) => {
 
     fetchPdfs();
   }, []);
+
+  // Fetch thumbnails for each PDF
+  useEffect(() => {
+    const fetchThumbnails = async () => {
+      const fetchedThumbnails: { [key: string]: string } = {};
+      for (const pdf of pdfs) {
+        try {
+          const response = await fetch(`http://localhost:5000/api/pdfs/thumbnails/${pdf}`, {
+            method: 'GET',
+            credentials: 'include', // Include cookies for authentication
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            fetchedThumbnails[pdf] = url;
+          }
+        } catch (error) {
+          console.error('Error fetching thumbnail:', error);
+        }
+      }
+      setThumbnails(fetchedThumbnails);
+    };
+
+    if (pdfs.length > 0) {
+      fetchThumbnails();
+    }
+  }, [pdfs]);
 
   // Filter PDFs based on search term
   const filteredPDFs = pdfs.filter((pdf) =>
@@ -65,11 +94,18 @@ const PDFLibrary = ({ onLogout }: { onLogout: () => void }) => {
               onClick={() => setSelectedPDF(pdf)}
             >
               <div className="aspect-[3/4] relative">
-                <img
-                  src={`/pdfs/${pdf}`}
-                  alt={pdf}
-                  className="w-full h-full object-cover"
-                />
+                {/* Use the thumbnail URL if available */}
+                {thumbnails[pdf] ? (
+                  <img
+                    src={thumbnails[pdf]}
+                    alt={pdf}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Loading...</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <span className="text-white text-lg font-medium">Click to view</span>
                 </div>
@@ -95,13 +131,14 @@ const PDFLibrary = ({ onLogout }: { onLogout: () => void }) => {
                 <X className="h-6 w-6" />
               </button>
             </div>
-            
-            <div className="p-4">
-              <embed src={`http://localhost:5000/api/pdfs/${selectedPDF}`} width="100%" height="600px" />
-            </div>
-                
 
-            
+            <div className="p-4">
+              <embed
+                src={`http://localhost:5000/api/pdfs/${selectedPDF}`}
+                width="100%"
+                height="600px"
+              />
+            </div>
           </div>
         </div>
       )}
